@@ -1,0 +1,66 @@
+name: Publish to NPM
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+    types: [ closed ]
+
+jobs:
+  publish:
+    # Only run when a PR is merged (not just closed)
+    if: github.event_name == 'push' || (github.event.pull_request.merged == true)
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        registry-url: 'http://4.227.180.222:4873'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Run tests (if available)
+      run: npm test
+      continue-on-error: true
+      
+    - name: Check if version has been updated
+      id: version-check
+      run: |
+        CURRENT_VERSION=$(node -p "require('./package.json').version")
+        echo "current-version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+        
+        # Get the latest published version from Verdaccio
+        PACKAGE_NAME=$(node -p "require('./package.json').name")
+        PUBLISHED_VERSION=$(npm view $PACKAGE_NAME version --registry=http://4.227.180.222:4873 2>/dev/null || echo "0.0.0")
+        echo "published-version=$PUBLISHED_VERSION" >> $GITHUB_OUTPUT
+        
+        if [ "$CURRENT_VERSION" != "$PUBLISHED_VERSION" ]; then
+          echo "should-publish=true" >> $GITHUB_OUTPUT
+          echo "Version changed from $PUBLISHED_VERSION to $CURRENT_VERSION"
+        else
+          echo "should-publish=false" >> $GITHUB_OUTPUT
+          echo "Version unchanged: $CURRENT_VERSION"
+        fi
+        
+    - name: Publish to Verdaccio
+      if: steps.version-check.outputs.should-publish == 'true'
+      run: npm publish --registry=http://4.227.180.222:4873
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.VERDACCIO_TOKEN }}
+        
+    - name: Create Git tag
+      if: steps.version-check.outputs.should-publish == 'true'
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git tag "v${{ steps.version-check.outputs.current-version }}"
+        git push origin "v${{ steps.version-check.outputs.current-version }}"
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
