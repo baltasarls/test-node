@@ -1,7 +1,7 @@
 {
-    "name" : "jbt-node-red-contrib-example-lower-case",
-    "version": "1.0.0",
-    "node-red" : {
+    "name": "jbt-node-red-contrib-example-lower-case",
+    "version": "1.0.1",
+    "node-red": {
         "nodes": {
             "lower-case": "lower-case.js"
         }
