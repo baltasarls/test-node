@@ -12,6 +12,9 @@ jobs:
     # Only run when a PR is merged (not just closed)
     if: github.event_name == 'push' || (github.event.pull_request.merged == true)
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Needed to push tags
+      packages: write  # If publishing packages
     
     steps:
     - name: Checkout code
