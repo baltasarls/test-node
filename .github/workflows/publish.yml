@@ -51,6 +51,8 @@ jobs:
           echo "should-publish=false" >> $GITHUB_OUTPUT
           echo "Version unchanged: $CURRENT_VERSION"
         fi
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.VERDACCIO_TOKEN }}
         
     - name: Publish to Verdaccio
       if: steps.version-check.outputs.should-publish == 'true'
