@@ -1,6 +1,6 @@
 {
     "name": "@jbtm/jbt-node-red-contrib-example-lower-case",
-    "version": "1.0.5-1",
+    "version": "1.0.5",
     "node-red": {
         "nodes": {
             "lower-case": "lower-case.js"
